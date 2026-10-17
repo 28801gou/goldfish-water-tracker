@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  # ① PostgreSQL データベース
+  db:
+    image: postgres:16-alpine
+    container_name: goldfish-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: goldfish_db
+      POSTGRES_USER: goldfish_user
+      POSTGRES_PASSWORD: goldfish_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ② Spring Boot Webアプリケーション
+  app:
+    build: .
+    container_name: goldfish-app
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

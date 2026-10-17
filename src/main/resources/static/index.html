@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>金魚 水質管理システム</title>
+    <!-- Chart.js 公式CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CSSを外部ファイルとして読み込み -->
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>🐠 金魚 水質チェック＆ログ管理</h1>
+    </header>
+
+    <main>
+      <!-- 測定入力カード -->
+      <section class="card">
+        <h2>水質データの測定・記録</h2>
+        <form id="waterForm" class="form-group">
+          <div>
+            <label for="tempInput">水温 (℃):</label>
+            <input
+              type="number"
+              id="tempInput"
+              step="0.1"
+              placeholder="24.0"
+              required
+            />
+          </div>
+          <div>
+            <label for="phInput">pH:</label>
+            <input
+              type="number"
+              id="phInput"
+              step="0.1"
+              placeholder="7.2"
+              required
+            />
+          </div>
+          <button type="submit">診断＆記録</button>
+        </form>
+        <div id="resultMessage" class="alert-box"></div>
+      </section>
+
+      <!-- ★ここを追加：水質推移グラフ表示カード -->
+      <section class="card">
+        <h2>📈 水質推移ダッシュボード</h2>
+        <div style="position: relative; height: 320px; width: 100%">
+          <canvas id="waterChart"></canvas>
+        </div>
+      </section>
+
+      <!-- 履歴一覧カード -->
+      <section class="card">
+        <h2>測定履歴ログ一覧</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>測定日時</th>
+              <th>水温</th>
+              <th>pH</th>
+              <th>診断ステータス</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <!-- JSがここに動的に追加 -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <!-- モダンJSの読み込み（type="module" を指定することで import/export が使える） -->
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>
