@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# ESP32のパスワード除外設定
+config.h
+esp32/config.h

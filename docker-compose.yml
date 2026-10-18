@@ -7,6 +7,7 @@ services:
     container_name: goldfish-postgres
     restart: always
     environment:
+      TZ: Asia/Tokyo
       POSTGRES_DB: goldfish_db
       POSTGRES_USER: goldfish_user
       POSTGRES_PASSWORD: goldfish_pass
@@ -20,6 +21,11 @@ services:
     build: .
     container_name: goldfish-app
     restart: always
+    environment:
+      TZ: Asia/Tokyo
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/goldfish_db?serverTimezone=Asia/Tokyo
+      SPRING_DATASOURCE_USERNAME: goldfish_user
+      SPRING_DATASOURCE_PASSWORD: goldfish_pass
     ports:
       - "8080:8080"
     depends_on:
