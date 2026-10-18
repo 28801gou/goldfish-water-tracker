@@ -1,54 +1,96 @@
-// 他のファイルからクラスをインポート（Javaの import と同じ！）
 import { ApiService } from "./services/ApiService.js";
 import { TableView } from "./views/TableView.js";
 import { ChartView } from "./views/ChartView.js";
 
-// テーブル描画クラスのインスタンスを生成
 const tableView = new TableView("logTableBody");
 const chartView = new ChartView("waterChart");
-// データを取得して画面（表・グラフ）を再描画する
 
-async function reloadDashboard() {
-  try {
-    const logs = await ApiService.getLogs();
-    tableView.render(logs);
-    chartView.render(logs); // ★グラフも同時に更新
-  } catch (error) {
-    console.error("ダッシュボード更新エラー:", error);
-  }
-}
-// 画面読み込み完了時の処理
+// 画面読み込み完了時の初期化
 document.addEventListener("DOMContentLoaded", async () => {
+  const tankSelect = document.getElementById("tankSelect");
+  const form = document.getElementById("waterForm");
+
+  // ① 水槽プルダウンを生成
+  await initTankSelect(tankSelect);
+
+  // ② 初期表示（選択中水槽のログ・グラフを描画）
   await reloadDashboard();
 
-  // フォームの送信イベントを監視
-  const form = document.getElementById("waterForm");
-  form.addEventListener("submit", handleSubmit);
+  // ③ プルダウン切り替え時にダッシュボード（表＆グラフ）を即時再描画
+  if (tankSelect) {
+    tankSelect.addEventListener("change", async () => {
+      console.log("水槽切り替え検知 -> tankId:", tankSelect.value);
+      await reloadDashboard();
+    });
+  }
+
+  // ④ フォーム送信時のイベント
+  if (form) {
+    form.addEventListener("submit", handleSubmit);
+  }
 });
 
-// 送信ボタンが押されたときの処理
-async function handleSubmit(event) {
-  event.preventDefault(); // 画面全体のリロード（GET送信）を防止
+// 水槽一覧をプルダウンに流し込む
+async function initTankSelect(selectElement) {
+  if (!selectElement) return;
+  try {
+    const tanks = await ApiService.getTanks();
+    selectElement.innerHTML = "";
+    tanks.forEach((tank) => {
+      const option = document.createElement("option");
+      option.value = tank.id;
+      option.textContent = `${tank.name}（${tank.location}）`;
+      selectElement.appendChild(option);
+    });
+  } catch (error) {
+    console.error("水槽一覧の取得に失敗しました:", error);
+  }
+}
 
+// 選択中の水槽ログを取得してダッシュボード（表とグラフ）を更新
+async function reloadDashboard() {
+  const tankSelect = document.getElementById("tankSelect");
+  const selectedTankId = tankSelect ? tankSelect.value : null;
+
+  try {
+    const logs = await ApiService.getLogs(selectedTankId);
+    // 表とグラフの両方を最新ログで再描画
+    tableView.render(logs);
+    chartView.render(logs);
+  } catch (error) {
+    console.error("ダッシュボード更新に失敗しました:", error);
+  }
+}
+
+// 診断＆記録ボタンが押されたときの処理
+async function handleSubmit(event) {
+  event.preventDefault();
+
+  const tankSelect = document.getElementById("tankSelect");
   const tempInput = document.getElementById("tempInput");
   const phInput = document.getElementById("phInput");
   const resultBox = document.getElementById("resultMessage");
 
+  const tankId = tankSelect ? tankSelect.value : null;
+  const temp = tempInput ? tempInput.value : "";
+  const ph = phInput ? phInput.value : "";
+
   try {
-    // 通信クラスを使ってSpring Bootへ送信
-    await ApiService.postCheck(tempInput.value, phInput.value);
+    const responseText = await ApiService.postCheck(tankId, temp, ph);
 
-    // 成功メッセージ表示
-    resultBox.style.display = "block";
-    resultBox.innerHTML = `<strong>記録完了:</strong> 水温 ${tempInput.value}℃ / pH ${phInput.value} を保存しました。`;
+    if (resultBox) {
+      resultBox.style.display = "block";
+      resultBox.innerHTML = responseText;
+    }
 
-    // 送信直後に表とグラフを最新化
+    // 送信後に最新データで表とグラフを更新
     await reloadDashboard();
 
-    // 入力フォームをクリア
-    tempInput.value = "";
-    phInput.value = "";
+    // フォーム入力をクリア
+    if (tempInput) tempInput.value = "";
+    if (phInput) phInput.value = "";
   } catch (error) {
-    alert("エラーが発生しました: " + error.message);
+    console.error("送信エラー:", error);
+    alert("登録に失敗しました: " + error.message);
   }
 }

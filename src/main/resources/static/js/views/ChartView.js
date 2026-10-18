@@ -3,32 +3,54 @@
  */
 export class ChartView {
   constructor(canvasId) {
-    this.ctx = document.getElementById(canvasId).getContext("2d");
-    this.chart = null; // Chartインスタンス保持用
+    this.canvas = document.getElementById(canvasId);
+    this.chart = null;
   }
 
   render(logs) {
-    if (!logs || logs.length === 0) {
+    if (!this.canvas) {
+      console.error("キャンバス要素が見つかりません:", this.canvas);
       return;
     }
 
-    // 時系列順（古い順）に並べ替えてグラフのX軸にする
-    const sortedLogs = logs
-      .slice()
-      .sort((a, b) => new Date(a.recordedAt) - new Date(b.recordedAt));
+    const ctx = this.canvas.getContext("2d");
 
-    // グラフ用データの抽出
-    const labels = sortedLogs.map((log) => log.recordedAt.substring(5, 16)); // "MM/dd HH:mm"
+    // データが0件の水槽に切り替えた場合は、グラフを消して終了
+    if (!logs || logs.length === 0) {
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      return;
+    }
+
+    // 時系列順（古い順）にソート
+    const sortedLogs = logs.slice().sort((a, b) => {
+      return (a.recordedAt || "").localeCompare(b.recordedAt || "");
+    });
+
+    // ラベル（月/日 時:分）と各データ系列
+    const labels = sortedLogs.map((log) => {
+      if (!log.recordedAt) return "";
+      return log.recordedAt.length >= 16
+        ? log.recordedAt.substring(5, 16)
+        : log.recordedAt;
+    });
+
     const tempData = sortedLogs.map((log) => log.temp);
     const phData = sortedLogs.map((log) => log.ph);
 
-    // すでにグラフが描画されている場合は一度破棄して再生成（二重描画防止）
+    // 既にグラフが存在する場合はインスタンスを再生成せず、データを差し替えて更新（描画チラつき防止）
     if (this.chart) {
-      this.chart.destroy();
+      this.chart.data.labels = labels;
+      this.chart.data.datasets[0].data = tempData;
+      this.chart.data.datasets[1].data = phData;
+      this.chart.update(); // アニメーションを伴ってグラフを更新
+      return;
     }
 
-    // Chart.js の初期化
-    this.chart = new Chart(this.ctx, {
+    // 初回描画時の新規作成
+    this.chart = new Chart(ctx, {
       type: "line",
       data: {
         labels: labels,
@@ -36,19 +58,21 @@ export class ChartView {
           {
             label: "水温 (℃)",
             data: tempData,
-            borderColor: "#e53e3e", // 赤系（水温）
+            borderColor: "#e53e3e",
             backgroundColor: "rgba(229, 62, 62, 0.1)",
             yAxisID: "yTemp",
-            tension: 0.2, // 線の丸み
+            tension: 0.3,
+            pointRadius: 4,
             fill: false,
           },
           {
             label: "pH",
             data: phData,
-            borderColor: "#3182ce", // 青系（pH）
+            borderColor: "#3182ce",
             backgroundColor: "rgba(49, 130, 206, 0.1)",
             yAxisID: "yPh",
-            tension: 0.2,
+            tension: 0.3,
+            pointRadius: 4,
             fill: false,
           },
         ],
@@ -57,7 +81,6 @@ export class ChartView {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          // 左側のY軸（水温用）
           yTemp: {
             type: "linear",
             position: "left",
@@ -65,14 +88,13 @@ export class ChartView {
             min: 10,
             max: 32,
           },
-          // 右側のY軸（pH用）
           yPh: {
             type: "linear",
             position: "right",
             title: { display: true, text: "pH" },
             min: 5.0,
             max: 9.0,
-            grid: { drawOnChartArea: false }, // 目盛り線が重複するのを防ぐ
+            grid: { drawOnChartArea: false },
           },
         },
       },

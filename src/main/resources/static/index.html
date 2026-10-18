@@ -19,6 +19,20 @@
       <section class="card">
         <h2>水質データの測定・記録</h2>
         <form id="waterForm" class="form-group">
+          <!-- 対象水槽の選択プルダウン -->
+          <div>
+            <label for="tankSelect">対象水槽:</label>
+            <select
+              id="tankSelect"
+              style="
+                padding: 10px;
+                border-radius: 6px;
+                border: 1px solid #bcccdc;
+                font-size: 1rem;
+              "
+            ></select>
+          </div>
+          <!-- JSで動的にオプションを追加します -->
           <div>
             <label for="tempInput">水温 (℃):</label>
             <input
@@ -44,7 +58,7 @@
         <div id="resultMessage" class="alert-box"></div>
       </section>
 
-      <!-- ★ここを追加：水質推移グラフ表示カード -->
+      <!-- 水質推移グラフ表示カード -->
       <section class="card">
         <h2>📈 水質推移ダッシュボード</h2>
         <div style="position: relative; height: 320px; width: 100%">
