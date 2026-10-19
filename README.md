@@ -40,7 +40,7 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
 
 ## 🏗 システムアーキテクチャ
 
-````mermaid
+```mermaid
 graph TD
     subgraph IoT Edge
         Temp[DS18B20 水温センサー] -->|1-Wire| ESP[ESP32 マイコン]
@@ -96,10 +96,6 @@ LINEのMessaging APIを使ったのも初めてだったので、apiの取得に
 
 ## これからの展望
 
-
-
 換水アラート＆リマインダー通知:
 
 一定日数換水記録がない場合や、pH降下速度が急激な場合に画面上へアラートを表示する機能。
-
-````
