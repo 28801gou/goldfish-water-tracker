@@ -28,6 +28,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: goldfish_pass
     ports:
       - "8080:8080"
+    env_file: # ★ここを追記
+      - .env # ★ここを追記
     depends_on:
       - db
 

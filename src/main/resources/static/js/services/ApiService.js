@@ -1,7 +1,6 @@
 /**
  * サーバーとのAPI通信を担当するクラス
  */
-// ほかのファイルからこのクラスをimportして使えるように公開する
 export class ApiService {
   // ログ全件取得APIを呼び出す
   static async getTanks() {
@@ -32,5 +31,35 @@ export class ApiService {
       throw new Error("診断リクエストの送信に失敗しました");
     }
     return await response.text();
+  }
+
+  // ★ 新しい水槽を登録するAPI (POST)
+  static async postTank(name, location) {
+    const response = await fetch("/api/tanks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, location: location }),
+    });
+    if (!response.ok) throw new Error("水槽の登録に失敗しました");
+    return await response.json();
+  }
+
+  // ★ 水槽情報を更新するAPI (PUT)
+  static async putTank(id, name, location) {
+    const response = await fetch(`/api/tanks/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, location }),
+    });
+    if (!response.ok) throw new Error("水槽の更新に失敗しました");
+    return await response.json();
+  }
+
+  // ★ 水槽を削除するAPI (DELETE)
+  static async deleteTank(id) {
+    const response = await fetch(`/api/tanks/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("水槽の削除に失敗しました");
   }
 }

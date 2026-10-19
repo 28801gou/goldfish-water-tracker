@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>水槽の管理 - 金魚 水質チェック</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <h1>⚙️ 水槽の管理</h1>
+        <a
+          href="/"
+          class="btn-secondary"
+          style="text-decoration: none; padding: 8px 16px"
+          >◀ 戻る</a
+        >
+      </div>
+
+      <!-- 登録フォーム -->
+      <div class="card">
+        <h2>➕ 新しい水槽を登録</h2>
+        <form
+          id="addTankForm"
+          class="form-group"
+          style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap"
+        >
+          <input
+            type="text"
+            id="newTankName"
+            placeholder="水槽名 (例: 琉金用30cm)"
+            required
+            style="flex: 2; min-width: 200px"
+          />
+          <select
+            id="newTankLocation"
+            style="
+              flex: 1;
+              padding: 12px;
+              border: 1px solid #ccc;
+              border-radius: 8px;
+              min-width: 120px;
+            "
+          >
+            <option value="INDOOR">屋内 (INDOOR)</option>
+            <option value="OUTDOOR">屋外 (OUTDOOR)</option>
+          </select>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="flex: 1; min-width: 120px"
+          >
+            水槽を追加
+          </button>
+        </form>
+        <p
+          id="addTankResult"
+          style="
+            color: #28a745;
+            margin-top: 10px;
+            font-weight: bold;
+            display: none;
+          "
+        ></p>
+      </div>
+
+      <!-- 一覧・編集・削除エリア -->
+      <div class="card" style="margin-top: 20px">
+        <h2>📋 登録済みの水槽一覧</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>水槽名</th>
+              <th>設置場所</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tankTableBody">
+            <!-- ここにJavaScriptで水槽一覧が表示されます -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script type="module" src="/js/tanks.js"></script>
+  </body>
+</html>

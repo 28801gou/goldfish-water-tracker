@@ -16,10 +16,10 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
     室内ガラス水槽や屋外トロ舟など、飼育環境ごとの水質データを分離して保持・管理。
   - **リアルタイム水質自動診断:**  
     水温とpHの入力値から、金魚の生体特性に合わせた適正範囲（低水温・高水温、酸性化・アルカリ傾向）を即時判定。
+  - **LINE自動アラート通知:**  
+    異常値（水温28℃超/15℃未満、pH6.5未満/8.0超など）を検知した際、LINE Messaging APIを経由して管理者のスマホへ即座に警告メッセージを送信。
   - **推移ダッシュボード (Chart.js):**  
-    水温（赤軸）とpH（青軸）の2軸折れ線グラフで時系列変化を可視化。プルダウン変更に合わせて非同期（SPAライク）に動的更新。
-  - **測定履歴ログ一覧:**  
-    測定日時・水温・pH・診断ステータスを時系列降順でテーブル表示。
+    水温（赤軸）とpH（青軸）の2軸折れ線グラフで時系列変化を可視化。
   - **データ永続化設計:**  
     Docker Volume を利用し、コンテナの破棄・再起動時にも蓄積ログが消失しない環境を構築。
 
@@ -27,53 +27,49 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
 
 ## 🛠 技術スタック
 
-| カテゴリ           | 採用技術 / ハードウェア                                                    | 採用理由 / 用途                                                  |
-| :----------------- | :------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| **IoT / Hardware** | ESP32-WROOM-32, DS18B20 (防水デジタル温度計), アナログpHセンサーモジュール | Wi-Fi経由のデータ送信、1-Wireプロトコル通信、ADCによる電圧検知   |
-| **Backend**        | Java 17, Spring Boot 3.x, Spring Data JPA                                  | 堅牢な型安全性とRESTful API、ORM（JPA）によるDB操作の抽象化      |
-| **Database**       | PostgreSQL 16 (Alpine)                                                     | 信頼性の高いリレーショナルデータベース、外部キーによる整合性担保 |
-| **Frontend**       | HTML5, CSS3, JavaScript (ES6+ Modules), Chart.js                           | フレームワーク非依存の軽量構成。モジュール分割と2軸グラフ描画    |
-| **Infrastructure** | Docker, Docker Compose                                                     | 開発環境のコンテナ統一、DB永続化（Docker Volume）のコード管理    |
-| **Build Tools**    | Maven, Arduino IDE                                                         | 依存関係管理、ビルドライフサイクルの自動化、ファームウェアビルド |
+| カテゴリ           | 採用技術 / ハードウェア                          | 採用理由 / 用途                                                |
+| :----------------- | :----------------------------------------------- | :------------------------------------------------------------- |
+| **IoT / Hardware** | ESP32-WROOM-32, DS18B20, アナログpHセンサー      | Wi-Fi経由のデータ送信、1-Wireプロトコル通信、ADCによる電圧検知 |
+| **Backend**        | Java 17, Spring Boot 3.x, Spring Data JPA        | 堅牢な型安全性とRESTful API、ORM（JPA）によるDB操作の抽象化    |
+| **Database**       | PostgreSQL 16 (Alpine)                           | 信頼性の高いRDBMS、外部キーによる整合性担保                    |
+| **Frontend**       | HTML5, CSS3, JavaScript (ES6+ Modules), Chart.js | フレームワーク非依存の軽量構成。モジュール分割と2軸グラフ描画  |
+| **Infrastructure** | Docker, Docker Compose                           | 開発環境のコンテナ統一、DB永続化（Docker Volume）のコード管理  |
+| **External API**   | LINE Messaging API                               | スマホへのリアルタイムなプッシュ通知実現                       |
 
 ---
 
 ## 🏗 システムアーキテクチャ
 
-```text
-[ ESP32 (IoT Edge) ]
-  ├─ DS18B20 (Water Temp / 1-Wire GPIO 4)
-  └─ Analog pH Sensor (ADC GPIO 34)
-       │
-       ▼ HTTP GET (/check?tankId=1&temp=XX&ph=XX)
-┌────────────────────────────────────────────────────────┐
-│  Docker Network: goldfish-network                      │
-│                                                        │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ goldfish-app (Spring Boot / Java 17)             │  │
-│  │                                                  │  │
-│  │   [Controller]  REST API (/api/tanks, /logs...)  │  │
-│  │        │                                         │  │
-│  │   [Repository]  Spring Data JPA                  │  │
-│  │        │                                         │  │
-│  │   [Static]      ES Modules (HTML / CSS / JS)     │  │
-│  └────────┬─────────────────────────────────────────┘  │
-│           │ JDBC (Port: 5432)                          │
-│           ▼                                            │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ goldfish-postgres (PostgreSQL 16)                │  │
-│  │                                                  │  │
-│  │   [tanks, water_logs Tables]                     │  │
-│  └────────┬─────────────────────────────────────────┘  │
-│           │                                            │
-└───────────┼────────────────────────────────────────────┘
-            ▼
-   [ Docker Volume (postgres_data) ] (Host Disk Persistence)
+```mermaid
+graph TD
+    subgraph IoT Edge
+        Temp[DS18B20 水温センサー] -->|1-Wire| ESP[ESP32 マイコン]
+        pH[アナログpHセンサー] -->|ADC| ESP
+    end
 
+    subgraph Docker Network
+        APP[Spring Boot アプリ\n/check, /api/tanks]
+        DB[(PostgreSQL 16\ntanks / water_logs)]
+        APP <-->|JDBC| DB
+    end
 
-# 開発中に止まったこと
+    subgraph Frontend
+        UI[ブラウザUI\nChart.js / Dashboard]
+        UI <-->|REST API| APP
+    end
 
-「水量」ではなく「設置場所（location）」を採用した理由
+    subgraph External
+        LINE[LINE Messaging API]
+        Phone([スマホ / LINEアプリ])
+        LINE -->|アラート通知| Phone
+    end
+
+    ESP -->|HTTP GET| APP
+    APP -->|異常検知時POST| LINE
+
+## 開発中に止まったこと
+
+#「水量」ではなく「設置場所（location）」を採用した理由
 初期のモデリング検討では、水槽テーブルの属性として「総水量」を持たせる案がありました。
 
 しかし、実際の金魚飼育現場では以下の事象が日常的に発生します。
@@ -88,13 +84,14 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
 
 単に水槽の名前を管理するだけでなく、飼育環境の特性差をデータ構造に反映させるため、あえて変動値である水量を排し、location（屋内/屋外）カラムを持たせる設計へと判断を改めました。
 
-今回はESP32を使いました。
+#はじめてのIoT（ESP32）開発と生成AIの活用
+今回、自身初となるマイコン（ESP32）を用いたハードウェア開発に挑戦しました。
+ハードウェア特有の配線や、マイコンとローカルサーバー間のネットワーク通信不通、アナログ入力（ADC）の電圧変換と個体差の校正など、Web開発単体では経験しない課題に直面しました。
 
-自分自身初めてマイコン（ESP32）を使っての開発をしました
-ハードウェア特有の配線や、マイコンとローカルサーバー間のネットワーク通信不通（HTTPのURL構文不備によるコネクションエラー）、アナログ入力（ADC）の電圧変換と個体差の校正など、Web開発単体では経験しない課題に直面しました。
+開発過程では、生成AIを技術的な相談相手（ペアプログラマ）として活用し、エラーログやシリアル通信ログの解析を依頼しながら「なぜこのエラーが起きているのか」という根本原因を論理的に理解・切り分けして実装を進めました。結果として、センサー計測からDockerコンテナ上のバックエンドへのデータ収集、LINE通知連携までを完成させることができました。
 
-開発過程では、生成AIを技術的な相談相手（ペアプログラマ）として活用し、エラーログやシリアル通信ログの解析を依頼しながら「なぜこのエラーが起きているのか」という根本原因を論理的に理解・切り分けして実装を進めました。結果として、センサー計測からDockerコンテナ上のバックエンドへのデータ収集・可視化までを完成させることができました。
-
+LINEのMessaging APIを使ったのも初めてだったので、apiの取得に困惑しました。
+開発時にはMessaging APIの使用が変わっており、さらに難しく感じました。
 
 ## これからの展望
 
@@ -104,7 +101,4 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
 
 一定日数換水記録がない場合や、pH降下速度が急激な場合に画面上へアラートを表示する機能。
 
-水槽マスタの画面操作（CRUD）:
-
-水槽の追加・編集・削除をブラウザUI上から完結できる管理画面の実装。
 ```

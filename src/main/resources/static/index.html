@@ -12,27 +12,82 @@
   <body>
     <header>
       <h1>🐠 金魚 水質チェック＆ログ管理</h1>
+      <!-- index.html の <h1> タグのすぐ下あたりに追記 -->
+      <div style="text-align: right; margin-bottom: 16px">
+        <a
+          href="/tanks.html"
+          style="text-decoration: none; font-weight: bold; color: #2b6cb0"
+          >⚙️ 水槽の追加・管理はこちら ➔</a
+        >
+      </div>
     </header>
 
     <main>
-      <!-- 測定入力カード -->
-      <section class="card">
-        <h2>水質データの測定・記録</h2>
-        <form id="waterForm" class="form-group">
-          <!-- 対象水槽の選択プルダウン -->
-          <div>
-            <label for="tankSelect">対象水槽:</label>
-            <select
-              id="tankSelect"
-              style="
-                padding: 10px;
-                border-radius: 6px;
-                border: 1px solid #bcccdc;
-                font-size: 1rem;
-              "
-            ></select>
+      <!-- ① 水槽選択 ＆ 現在の水質ステータス（最上部） -->
+      <section class="card current-status-card">
+        <div style="margin-bottom: 1rem">
+          <label for="tankSelect" style="font-weight: bold; margin-right: 8px"
+            >対象水槽:</label
+          >
+          <select
+            id="tankSelect"
+            style="
+              padding: 8px 12px;
+              border-radius: 6px;
+              border: 1px solid #bcccdc;
+              font-size: 1rem;
+            "
+          ></select>
+        </div>
+
+        <div class="status-header">
+          <h2 style="margin: 0; font-size: 1.15rem">現在の水質状況</h2>
+          <span
+            class="last-updated"
+            id="lastUpdatedText"
+            style="font-size: 0.85rem; color: #718096"
+            >測定待機中...</span
+          >
+        </div>
+
+        <!-- 水温 & pH の大型数値カード -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">現在の水温</span>
+            <div class="metric-value-wrap">
+              <span class="metric-value" id="currentTemp">--.-</span>
+              <span class="metric-unit">℃</span>
+            </div>
+            <span class="status-badge" id="badgeTemp">判定中</span>
           </div>
-          <!-- JSで動的にオプションを追加します -->
+
+          <div class="metric-card">
+            <span class="metric-label">現在のpH</span>
+            <div class="metric-value-wrap">
+              <span class="metric-value" id="currentPh">-.--</span>
+            </div>
+            <span class="status-badge" id="badgePh">判定中</span>
+          </div>
+        </div>
+
+        <!-- グラフ展開トグルボタン -->
+        <button type="button" id="toggleChartBtn" class="btn-toggle-chart">
+          📈 過去の推移グラフを表示する
+        </button>
+      </section>
+
+      <!-- ② 水質推移グラフ表示カード（初期状態は非表示: is-hidden） -->
+      <section id="chartSection" class="card is-hidden">
+        <h2>📈 水質推移ダッシュボード</h2>
+        <div style="position: relative; height: 320px; width: 100%">
+          <canvas id="waterChart"></canvas>
+        </div>
+      </section>
+
+      <!-- ③ 手動測定入力カード -->
+      <section class="card">
+        <h2>手動測定データの記録</h2>
+        <form id="waterForm" class="form-group">
           <div>
             <label for="tempInput">水温 (℃):</label>
             <input
@@ -58,15 +113,7 @@
         <div id="resultMessage" class="alert-box"></div>
       </section>
 
-      <!-- 水質推移グラフ表示カード -->
-      <section class="card">
-        <h2>📈 水質推移ダッシュボード</h2>
-        <div style="position: relative; height: 320px; width: 100%">
-          <canvas id="waterChart"></canvas>
-        </div>
-      </section>
-
-      <!-- 履歴一覧カード -->
+      <!-- ④ 履歴一覧カード -->
       <section class="card">
         <h2>測定履歴ログ一覧</h2>
         <table>
@@ -85,7 +132,7 @@
       </section>
     </main>
 
-    <!-- モダンJSの読み込み（type="module" を指定することで import/export が使える） -->
+    <!-- モダンJSの読み込み -->
     <script type="module" src="/js/main.js"></script>
   </body>
 </html>

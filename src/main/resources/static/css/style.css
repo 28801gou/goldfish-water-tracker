@@ -29,6 +29,7 @@ h2 {
   border-radius: 10px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
 }
 
 .form-group {
@@ -104,4 +105,153 @@ th {
 
 tr:hover {
   background-color: #f8fafc;
+}
+
+/* =====================================
+   最上部：現在値サマリーカード & トグル
+===================================== */
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.last-updated {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.metric-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  border: 1px solid #edf2f7;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.25rem;
+}
+
+.metric-value-wrap {
+  margin: 0.25rem 0;
+}
+
+.metric-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1a202c;
+  line-height: 1.2;
+}
+
+.metric-unit {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #718096;
+  margin-left: 2px;
+}
+
+/* 診断判定バッジ */
+.status-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background-color: #edf2f7;
+  color: #4a5568;
+}
+
+.badge-safe {
+  background-color: #c6f6d5;
+  color: #22543d;
+}
+
+.badge-warn {
+  background-color: #feebc8;
+  color: #7b341e;
+}
+
+.badge-danger {
+  background-color: #fed7d7;
+  color: #742a2a;
+}
+
+/* グラフトグルボタン */
+.btn-toggle-chart {
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-chart:hover {
+  background: #e0f2fe;
+}
+
+.btn-toggle-chart:active {
+  transform: scale(0.99);
+}
+
+/* 折りたたみ非表示用クラス */
+.is-hidden {
+  display: none !important;
+}
+
+/* =====================================
+   スマホ最適化 (レスポンシブ)
+===================================== */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 0.8rem; /* 画面幅に合わせて自然に収まるサイズ */
+    white-space: nowrap; /* 強制改行を防止 */
+    letter-spacing: -0.5px; /* 文字間をわずかに詰めて収まりを良くする */
+    margin-bottom: 16px;
+  }
+  body {
+    padding: 16px 12px;
+  }
+
+  .card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .metric-value {
+    font-size: 1.8rem;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  input[type="number"] {
+    width: 100%;
+  }
+
+  button[type="submit"] {
+    width: 100%;
+  }
 }
