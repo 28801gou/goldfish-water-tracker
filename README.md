@@ -66,7 +66,7 @@ graph TD
 
     ESP -->|HTTP GET| APP
     APP -->|異常検知時POST| LINE
-    ```
+```
 
 ## 開発中に止まったこと
 
