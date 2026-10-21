@@ -41,3 +41,5 @@ config.h
 esp32/config.h
 # Secrets
 .env
+
+.antigravityignore

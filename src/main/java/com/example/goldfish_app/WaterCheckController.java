@@ -133,4 +133,10 @@ public class WaterCheckController {
         }
         return waterLogRepository.findAll();
     }
+
+    // 水槽ID指定での測定履歴の取得 (/api/tanks/{tankId}/logs)
+    @GetMapping("/api/tanks/{tankId}/logs")
+    public List<WaterLog> getLogsByTank(@PathVariable Long tankId) {
+        return waterLogRepository.findByTankId(tankId);
+    }
 }

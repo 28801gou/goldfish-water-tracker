@@ -7,7 +7,7 @@ export class ChartView {
     this.chart = null;
   }
 
-  render(logs) {
+  render(logs, maintData = []) {
     if (!this.canvas) {
       console.error("キャンバス要素が見つかりません:", this.canvas);
       return;
@@ -37,6 +37,11 @@ export class ChartView {
         : log.recordedAt;
     });
 
+    // 各水質ログのタイムスタンプ配列（メンテナンス縦線の位置計算用）
+    const logTimestamps = sortedLogs.map((log) =>
+      log.recordedAt ? new Date(log.recordedAt).getTime() : NaN,
+    );
+
     const tempData = sortedLogs.map((log) => log.temp);
     const phData = sortedLogs.map((log) => log.ph);
 
@@ -45,6 +50,8 @@ export class ChartView {
       this.chart.data.labels = labels;
       this.chart.data.datasets[0].data = tempData;
       this.chart.data.datasets[1].data = phData;
+      this.chart.options.maintenanceLogs = maintData;
+      this.chart.options.logTimestamps = logTimestamps;
       this.chart.update(); // アニメーションを伴ってグラフを更新
       return;
     }
@@ -80,6 +87,8 @@ export class ChartView {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        maintenanceLogs: maintData,
+        logTimestamps: logTimestamps,
         scales: {
           yTemp: {
             type: "linear",

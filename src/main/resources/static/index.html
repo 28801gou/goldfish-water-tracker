@@ -82,6 +82,40 @@
         <div style="position: relative; height: 320px; width: 100%">
           <canvas id="waterChart"></canvas>
         </div>
+        <div
+          class="maintenance-box"
+          style="
+            margin: 20px 0 0 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+          "
+        >
+          <h3>🪣 メンテナンス記録</h3>
+          <!-- ※ 対象水槽プルダウンと連動して自動設定されます -->
+          <input type="hidden" id="maint-tank-id" value="1" />
+
+          <select id="maint-action">
+            <option value="換水">換水</option>
+            <option value="掃除">フィルター掃除</option>
+          </select>
+
+          <select id="maint-scale">
+            <option value="足し水">足し水のみ</option>
+            <option value="1/4">1/4 換水</option>
+            <option value="1/3">1/3 換水</option>
+            <option value="半分">半分 換水</option>
+            <option value="全換水">全換水（リセット）</option>
+          </select>
+
+          <input
+            type="text"
+            id="maint-memo"
+            placeholder="メモ（青水対策など）"
+            style="width: 200px"
+          />
+          <button type="button" id="btn-submit-maint">記録する</button>
+        </div>
       </section>
 
       <!-- ③ 手動測定入力カード -->

@@ -5,31 +5,134 @@ import { ChartView } from "./views/ChartView.js";
 const tableView = new TableView("logTableBody");
 const chartView = new ChartView("waterChart");
 
-// 画面読み込み完了時の初期化
+// ==========================================
+// ★ Chart.js 縦線描画用の自作プラグイン
+// ==========================================
+const verticalLinePlugin = {
+  id: "maintenanceLines",
+  afterDraw: (chart) => {
+    const maintLogs = chart.config.options.maintenanceLogs;
+    const timestamps = chart.config.options.logTimestamps;
+    if (!maintLogs || !maintLogs.length || !timestamps || !timestamps.length) {
+      return;
+    }
+
+    const ctx = chart.ctx;
+    const xAxis = chart.scales.x;
+    const yAxis = chart.scales.yTemp || chart.scales.y || chart.chartArea;
+    if (!xAxis || !yAxis) return;
+
+    maintLogs.forEach((log) => {
+      const logDate = new Date(log.createdAt).getTime();
+      if (isNaN(logDate)) return;
+
+      // 水質ログのタイムスタンプ配列からX座標を算出（線形補間）
+      let xPos;
+      const n = timestamps.length;
+      if (n === 1 || logDate <= timestamps[0]) {
+        xPos = xAxis.getPixelForValue(0);
+      } else if (logDate >= timestamps[n - 1]) {
+        xPos = xAxis.getPixelForValue(n - 1);
+      } else {
+        for (let i = 0; i < n - 1; i++) {
+          if (logDate >= timestamps[i] && logDate <= timestamps[i + 1]) {
+            const span = timestamps[i + 1] - timestamps[i];
+            const ratio = span > 0 ? (logDate - timestamps[i]) / span : 0;
+            const px1 = xAxis.getPixelForValue(i);
+            const px2 = xAxis.getPixelForValue(i + 1);
+            xPos = px1 + (px2 - px1) * ratio;
+            break;
+          }
+        }
+      }
+
+      if (xPos === undefined) return;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(xPos, yAxis.top);
+      ctx.lineTo(xPos, yAxis.bottom);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.8)";
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(21, 128, 61, 1)";
+      ctx.font = "bold 12px sans-serif";
+      const labelText = `${log.actionType}(${log.changeScale})`;
+      const textWidth = ctx.measureText(labelText).width;
+      const textX =
+        xPos + 5 + textWidth > chart.chartArea.right
+          ? xPos - textWidth - 5
+          : xPos + 5;
+      ctx.fillText(labelText, textX, yAxis.top + 15);
+      ctx.restore();
+    });
+  },
+};
+Chart.register(verticalLinePlugin);
+
+// ==========================================
+// 画面読み込み完了時の初期化処理
+// ==========================================
 document.addEventListener("DOMContentLoaded", async () => {
   const tankSelect = document.getElementById("tankSelect");
   const form = document.getElementById("waterForm");
+  const maintBtn = document.getElementById("btn-submit-maint"); // ★追加：メンテナンスボタン
 
-  // ① グラフ開閉（トグル）イベントの初期化
   initChartToggle();
-
-  // ② 水槽プルダウンを生成
   await initTankSelect(tankSelect);
-
-  // ③ 初期表示（選択中水槽のサマリー・ログ・グラフを描画）
   await reloadDashboard();
 
-  // ④ プルダウン切り替え時にダッシュボードを即時再描画
+  // プルダウン切り替え時のイベント
   if (tankSelect) {
     tankSelect.addEventListener("change", async () => {
       console.log("水槽切り替え検知 -> tankId:", tankSelect.value);
+      // ★ メンテナンス用フォームの水槽IDも連動して切り替える
+      const maintTankId = document.getElementById("maint-tank-id");
+      if (maintTankId) maintTankId.value = tankSelect.value;
+
       await reloadDashboard();
     });
   }
 
-  // ⑤ フォーム送信時のイベント
+  // フォーム送信時のイベント
   if (form) {
     form.addEventListener("submit", handleSubmit);
+  }
+
+  // ★追加：メンテナンス記録ボタンが押された時の処理
+  if (maintBtn) {
+    maintBtn.addEventListener("click", async () => {
+      const maintTankEl = document.getElementById("maint-tank-id");
+      const maintTankId = Number(
+        (tankSelect && tankSelect.value) || (maintTankEl && maintTankEl.value),
+      );
+      const actionType = document.getElementById("maint-action").value;
+      const changeScale = document.getElementById("maint-scale").value;
+      const memo = document.getElementById("maint-memo").value;
+
+      try {
+        const res = await fetch("/api/maintenance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tankId: maintTankId,
+            actionType,
+            changeScale,
+            memo,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+
+        alert("メンテナンス記録を保存しました！");
+        document.getElementById("maint-memo").value = "";
+        await reloadDashboard(); // グラフに縦線を反映させるため再読み込み
+      } catch (error) {
+        console.error("メンテナンス記録の保存に失敗:", error);
+        alert("メンテナンス記録の保存に失敗しました: " + error.message);
+      }
+    });
   }
 });
 
@@ -45,30 +148,40 @@ async function initTankSelect(selectElement) {
       option.textContent = `${tank.name}（${tank.location}）`;
       selectElement.appendChild(option);
     });
+
+    // 初期表示時に、メンテナンスフォームのhidden値も一番上の水槽に合わせる
+    const maintTankId = document.getElementById("maint-tank-id");
+    if (maintTankId && tanks.length > 0) maintTankId.value = tanks[0].id;
   } catch (error) {
     console.error("水槽一覧の取得に失敗しました:", error);
   }
 }
 
-// 選択中の水槽ログを取得してダッシュボード（サマリーカード、表、グラフ）を更新
+// 選択中の水槽ログを取得してダッシュボードを更新
 async function reloadDashboard() {
   const tankSelect = document.getElementById("tankSelect");
   const selectedTankId = tankSelect ? tankSelect.value : null;
 
-  try {
-    const logs = await ApiService.getLogs(selectedTankId);
+  if (!selectedTankId) return;
 
-    // ★ 1. 最上部の「現在の値」サマリーカードを更新
-    updateCurrentStatus(logs);
-    // 2. 表とグラフを最新ログで再描画
-    tableView.render(logs);
-    chartView.render(logs);
+  try {
+    // 1. 水質のデータを取得
+    const waterData = await ApiService.getLogs(selectedTankId);
+
+    // 2. メンテナンスのデータを取得
+    const maintResponse = await fetch(`/api/maintenance/${selectedTankId}`);
+    const maintData = maintResponse.ok ? await maintResponse.json() : [];
+
+    // 3. 画面の各部品にデータを渡して更新
+    updateCurrentStatus(waterData);
+    tableView.render(waterData);
+    chartView.render(waterData, maintData); // maintDataを追加して渡す
   } catch (error) {
     console.error("ダッシュボード更新に失敗しました:", error);
   }
 }
 
-// ★ 最上部の「現在の水質状況」カードを更新する処理
+// 最上部の「現在の水質状況」カードを更新
 function updateCurrentStatus(logs) {
   const currentTempEl = document.getElementById("currentTemp");
   const currentPhEl = document.getElementById("currentPh");
@@ -92,19 +205,16 @@ function updateCurrentStatus(logs) {
     return;
   }
 
-  // 最新の1件（先頭の要素）
   const latest = logs[logs.length - 1];
-  // Java側のフィールド名 (temp, ph, recordedAt) に対応
   const temp = Number(latest.temp);
   const ph = Number(latest.ph);
   const recordedAt = latest.recordedAt || "記録なし";
+
   if (currentTempEl) currentTempEl.textContent = temp.toFixed(1);
   if (currentPhEl) currentPhEl.textContent = ph.toFixed(2);
-  // 2. 最終測定日時の表示 (recordedAt を使用)
-  if (lastUpdatedTextEl) {
+  if (lastUpdatedTextEl)
     lastUpdatedTextEl.textContent = `最終測定: ${recordedAt}`;
-  }
-  // 水温バッジの判定
+
   if (badgeTempEl) {
     if (temp >= 18.0 && temp <= 26.0) {
       badgeTempEl.textContent = "適正";
@@ -118,7 +228,6 @@ function updateCurrentStatus(logs) {
     }
   }
 
-  // pHバッジの判定
   if (badgePhEl) {
     if (ph >= 6.8 && ph <= 7.8) {
       badgePhEl.textContent = "良好";
@@ -133,7 +242,7 @@ function updateCurrentStatus(logs) {
   }
 }
 
-// ★ グラフ折りたたみ（トグル）制御の初期化
+// グラフ折りたたみ制御
 function initChartToggle() {
   const toggleBtn = document.getElementById("toggleChartBtn");
   const chartSection = document.getElementById("chartSection");
@@ -142,12 +251,10 @@ function initChartToggle() {
 
   toggleBtn.addEventListener("click", () => {
     const isHidden = chartSection.classList.toggle("is-hidden");
-
     if (isHidden) {
       toggleBtn.textContent = "📈 過去の推移グラフを表示する";
     } else {
       toggleBtn.textContent = "📉 グラフを閉じる";
-      // 非表示から表示へ切り替わった際にChart.jsが崩れないようサイズを再計算
       if (chartView && chartView.chart) {
         chartView.chart.resize();
       }
@@ -155,7 +262,7 @@ function initChartToggle() {
   });
 }
 
-// 診断＆記録ボタンが押されたときの処理
+// 診断＆記録ボタン処理
 async function handleSubmit(event) {
   event.preventDefault();
 
@@ -170,16 +277,11 @@ async function handleSubmit(event) {
 
   try {
     const responseText = await ApiService.postCheck(tankId, temp, ph);
-
     if (resultBox) {
       resultBox.style.display = "block";
       resultBox.innerHTML = responseText;
     }
-
-    // 送信後に最新データでサマリー・表・グラフを更新
     await reloadDashboard();
-
-    // フォーム入力をクリア
     if (tempInput) tempInput.value = "";
     if (phInput) phInput.value = "";
   } catch (error) {
