@@ -92,9 +92,9 @@
           "
         >
           <h3>🪣 メンテナンス記録</h3>
+
           <!-- ※ 対象水槽プルダウンと連動して自動設定されます -->
           <input type="hidden" id="maint-tank-id" value="1" />
-
           <select id="maint-action">
             <option value="換水">換水</option>
             <option value="掃除">フィルター掃除</option>
@@ -117,6 +117,79 @@
           <button type="button" id="btn-submit-maint">記録する</button>
         </div>
       </section>
+      <div class="ai-vision-box">
+        <h4 class="vision-title">📷 AI水量チェック</h4>
+        <div style="margin-bottom: 12px; font-size: 0.9em">
+          <label
+            >幅:
+            <input
+              type="number"
+              id="tank-w"
+              value="60"
+              style="width: 60px"
+            />cm</label
+          >
+          <label
+            >奥行:
+            <input
+              type="number"
+              id="tank-d"
+              value="30"
+              style="width: 60px"
+            />cm</label
+          >
+          <label
+            >高さ:
+            <input
+              type="number"
+              id="tank-h"
+              value="36"
+              style="width: 60px"
+            />cm</label
+          >
+        </div>
+        <input
+          type="file"
+          id="tank-image"
+          accept="image/*"
+          class="vision-input"
+        />
+        <button id="btn-analyze-image" class="btn-vision">
+          画像をAIに送信
+        </button>
+        <div id="vision-result" class="vision-result-box"></div>
+      </div>
+      <!-- 💡 換水アシスタント -->
+      <div class="advice-box">
+        <h3 class="advice-title">💡 換水アシスタント</h3>
+
+        <p class="advice-desc">
+          現在のpHと目標値(7.0)から、安全な換水量を算出します。
+        </p>
+
+        <div class="advice-input-group">
+          <label
+            >現在の水槽の目安水量：
+
+            <input
+              type="number"
+              id="advice-volume"
+              class="advice-input"
+              value="60"
+            />
+
+            リットル
+          </label>
+        </div>
+
+        <button id="btn-calc-advice" class="btn-calc">
+          最適な換水量を計算する
+        </button>
+
+        <div id="advice-result" class="advice-result-box">
+          <!-- ここに計算結果が表示されます -->
+        </div>
+      </div>
 
       <!-- ③ 手動測定入力カード -->
       <section class="card">

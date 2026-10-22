@@ -17,7 +17,6 @@ public class GoldfishAppApplication {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
     }
 
-
 	public static void main(String[] args) {
 		SpringApplication.run(GoldfishAppApplication.class, args);
 	}

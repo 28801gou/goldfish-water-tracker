@@ -62,4 +62,12 @@ export class ApiService {
     });
     if (!response.ok) throw new Error("水槽の削除に失敗しました");
   }
+  // ApiService.js の中に追加
+  static async getWaterChangeAdvice(currentPh, volume) {
+    const response = await fetch(
+      `/api/advice/water-change?currentPh=${currentPh}&volume=${volume}`,
+    );
+    if (!response.ok) throw new Error("計算処理に失敗しました");
+    return await response.json();
+  }
 }

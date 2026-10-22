@@ -83,7 +83,92 @@ document.addEventListener("DOMContentLoaded", async () => {
   initChartToggle();
   await initTankSelect(tankSelect);
   await reloadDashboard();
+  // ★ AI換水アシスタントのボタン処理
+  const btnCalcAdvice = document.getElementById("btn-calc-advice");
+  if (btnCalcAdvice) {
+    btnCalcAdvice.addEventListener("click", async () => {
+      // 画面上部に表示されている「現在のpH」のテキストを取得
+      const currentPhText = document.getElementById("currentPh").textContent;
+      const volumeText = document.getElementById("advice-volume").value;
+      const resultBox = document.getElementById("advice-result");
 
+      // pHがまだ測定されていない場合のガード
+      if (currentPhText === "-.--" || isNaN(parseFloat(currentPhText))) {
+        alert("現在のpHデータがありません。先に水質を測定してください。");
+        return;
+      }
+
+      const currentPh = parseFloat(currentPhText);
+      const volume = parseFloat(volumeText);
+
+      try {
+        // APIを呼び出して計算結果を取得
+        const suggestion = await ApiService.getWaterChangeAdvice(
+          currentPh,
+          volume,
+        );
+
+        // 結果を画面に表示
+        resultBox.style.display = "block";
+        resultBox.innerHTML = `<strong>✨ 提案:</strong><br>${suggestion.message}`;
+      } catch (error) {
+        console.error("エラー:", error);
+        alert("計算中にエラーが発生しました。");
+      }
+    });
+  }
+  // ★ AI水量チェックの画像送信処理
+  const btnAnalyzeImage = document.getElementById("btn-analyze-image");
+  if (btnAnalyzeImage) {
+    btnAnalyzeImage.addEventListener("click", async () => {
+      const fileInput = document.getElementById("tank-image");
+      const resultBox = document.getElementById("vision-result");
+
+      // 1. 一番最初に、写真が選択されているかチェックする
+      if (!fileInput.files.length) {
+        alert("水槽の写真を選択してください");
+        return;
+      }
+
+      // 2. 寸法と水質データを取得
+      const w = document.getElementById("tank-w").value;
+      const d = document.getElementById("tank-d").value;
+      const h = document.getElementById("tank-h").value;
+
+      const currentTemp = document.getElementById("currentTemp")
+        ? document.getElementById("currentTemp").textContent
+        : "不明";
+      const currentPh = document.getElementById("currentPh")
+        ? document.getElementById("currentPh").textContent
+        : "不明";
+
+      // 3. 送信用データの組み立て（1回だけ宣言する）
+      const formData = new FormData();
+      formData.append("image", fileInput.files[0]);
+      formData.append("width", w);
+      formData.append("depth", d);
+      formData.append("height", h);
+      formData.append("temp", currentTemp);
+      formData.append("ph", currentPh);
+
+      // 4. 分析中メッセージの表示
+      resultBox.style.display = "block";
+      resultBox.innerHTML = "AIが画像を分析しています... ⏳";
+
+      // 5. API通信
+      try {
+        const response = await fetch("/api/vision/analyze", {
+          method: "POST",
+          body: formData,
+        });
+        resultBox.innerHTML = await response.text();
+      } catch (error) {
+        console.error("画像分析エラー:", error);
+        resultBox.innerHTML =
+          '<span style="color: red;">分析に失敗しました。</span>';
+      }
+    });
+  }
   // プルダウン切り替え時のイベント
   if (tankSelect) {
     tankSelect.addEventListener("change", async () => {
