@@ -40,7 +40,6 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
 
 ---
 
-## 🏗 システムアーキテクチャ
 
 ## 🏗 システムアーキテクチャ
 
