@@ -42,6 +42,8 @@ ESP32マイコン、Spring Boot、PostgreSQL、モダンJavaScript、Docker Comp
 
 ## 🏗 システムアーキテクチャ
 
+## 🏗 システムアーキテクチャ
+
 ```mermaid
 graph TD
     subgraph IoT Edge
@@ -52,12 +54,12 @@ graph TD
     subgraph Docker Network
         APP[Spring Boot アプリ\n/check, /api/...]
         DB[(PostgreSQL 16\ntanks / logs / maint)]
-        APP <-->|JDBC| DB
+        APP <--> DB
     end
 
     subgraph Frontend
         UI[ブラウザUI\nChart.js / Dashboard]
-        UI <-->|REST API| APP
+        UI <--> APP
     end
 
     subgraph External
@@ -69,8 +71,9 @@ graph TD
 
     ESP -->|HTTP GET| APP
     APP -->|異常検知時POST| LINE
-    APP <-->|画像+プロンプトPOST| Gemini
+    APP -->|画像+プロンプトPOST| Gemini
 
+```
 ## 開発中に止まったこと
 
 🧗 開発中に直面した課題と工夫
@@ -104,4 +107,4 @@ graph TD
 
 3. 金魚飼育の実態に即した「冬眠モード」の実装
 日本の屋外飼育（トロ舟など）では冬場に金魚を冬眠させる愛好家も多いため、単純な「低水温アラート」は冬場には実用的ではありません。そこで、水槽ごとに「冬眠モード」を設定できるようにし、ONの場合は通常のアラートを停止して「表面凍結の危険（1℃未満）」のみを通知するなど、季節に合わせた柔軟な通知制御を実装予定です。
-```
+
